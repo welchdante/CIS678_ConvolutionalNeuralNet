@@ -4,12 +4,6 @@ from pprint import pprint
 from random import random
 from numpy import genfromtxt
 
-default_settings = {
-	"lower_bound_weights" : 0.1,
-	"upper_bound_weights" : 0.1,
-	"init_bias" : 0.01
-}
-
 class NeuralNet:
 
 	def __init__(self, n_hidden_layers, n_inputs, n_outputs):
@@ -47,9 +41,9 @@ class NeuralNet:
 			activation += weights[i] * inputs[i]
 		return activation
 
-	def forward_propagate(self, network, row):
+	def forward_propagate(self, row):
 		inputs = row
-		for layer in network:
+		for layer in self.network:
 			new_inputs = []
 			for neuron in layer:
 				activation = self.activate(neuron['weights'], inputs)
@@ -58,13 +52,39 @@ class NeuralNet:
 			inputs = new_inputs
 		return inputs
 
+	def back_propagate(self, expected):
+		for i in reversed(range(len(self.network))):
+			layer = self.network[i]
+			errors = list()
+			if i != len(self.network) - 1:
+				for j in range(len(layer)):
+					error = 0.0
+					for neuron in self.network[i + 1]:
+						error += neuron['weights'][j] * neuron['delta']
+					errors.append(error)
+			else: 
+				for j in range(len(layer)):
+					neuron = layer[j]
+					errors.append(expected[j] - neuron['output'])
+			for j in range(len(layer)):
+				neuron = layer[j]
+				neuron['delta'] = errors[j] * self.sigmoid_derivative(neuron['output'])					
+		#calculate error for the output of y
+		
+		#calculate the error for each hidden unit h_i
 
-neural_net = NeuralNet(1,2,2)
-pprint(neural_net.network)
-print()
-row = [1, 0, None]
-output = neural_net.forward_propagate(neural_net.network, row)
-print(output)
+
+
+neural_net = NeuralNet(1,2,1)
+row = [1, 0]
+output = neural_net.forward_propagate(row)
+pprint(output)
+neural_net.network = [[{'output': 0.7105668883115941, 'weights': [0.13436424411240122, 0.8474337369372327, 0.763774618976614]}],
+		[{'output': 0.6213859615555266, 'weights': [0.2550690257394217, 0.49543508709194095]}, {'output': 0.6573693455986976, 'weights': [0.4494910647887381, 0.651592972722763]}]]
+expected = [0, 1]
+neural_net.back_propagate(expected)
+for layer in neural_net.network:
+	print(layer)
 
 #neural_net.network = neural_net.initialize_network()
 #for layer in neural_net.network:
