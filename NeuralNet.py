@@ -2,6 +2,7 @@ import math
 import numpy as np
 from pprint import pprint
 from random import random
+from random import seed
 from numpy import genfromtxt
 
 class NeuralNet:
@@ -68,23 +69,68 @@ class NeuralNet:
 					errors.append(expected[j] - neuron['output'])
 			for j in range(len(layer)):
 				neuron = layer[j]
-				neuron['delta'] = errors[j] * self.sigmoid_derivative(neuron['output'])					
-		#calculate error for the output of y
-		
-		#calculate the error for each hidden unit h_i
+				neuron['delta'] = errors[j] * self.sigmoid_derivative(neuron['output'])
+
+	def update_weights(self, row, learning_rate):
+		for i in range(len(self.network)):
+			inputs = row[:-1]
+			if i != 0:
+				inputs = [neuron['output'] for neuron in self.network[i - 1]]
+			for neuron in self.network[i]:
+				for j in range(len(inputs)):
+					neuron['weights'][j] += learning_rate * neuron['delta'] * inputs[j]
+				neuron['weights'][-1] += learning_rate * neuron['delta']
+
+	def train(self, training_data, learning_rate, num_epochs, num_outputs):
+		for epoch in range(num_epochs):
+			error = 0
+			for row in training_data:
+				outputs = self.forward_propagate(row)
+				expected = [0 for i in range(num_outputs)]
+				expected[row[-1]] = 1
+				error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
+				self.back_propagate(expected)
+				self.update_weights(row, learning_rate)
+			print('>epoch=%d, lrate=%.3f, error=%.3f' % (epoch, learning_rate, error))
 
 
+seed(1)
+dataset = [[2.7810836,2.550537003,0],
+	[1.465489372,2.362125076,0],
+	[3.396561688,4.400293529,0],
+	[1.38807019,1.850220317,0],
+	[3.06407232,3.005305973,0],
+	[7.627531214,2.759262235,1],
+	[5.332441248,2.088626775,1],
+	[6.922596716,1.77106367,1],
+	[8.675418651,-0.242068655,1],
+	[7.673756466,3.508563011,1]]
 
-neural_net = NeuralNet(1,2,1)
-row = [1, 0]
-output = neural_net.forward_propagate(row)
-pprint(output)
-neural_net.network = [[{'output': 0.7105668883115941, 'weights': [0.13436424411240122, 0.8474337369372327, 0.763774618976614]}],
-		[{'output': 0.6213859615555266, 'weights': [0.2550690257394217, 0.49543508709194095]}, {'output': 0.6573693455986976, 'weights': [0.4494910647887381, 0.651592972722763]}]]
-expected = [0, 1]
-neural_net.back_propagate(expected)
+n_inputs = len(dataset[0]) - 1
+n_outputs = len(set([row[-1] for row in dataset]))
+
+neural_net = NeuralNet(1, n_inputs, n_outputs)
+neural_net.train(dataset, 0.5, 20, n_outputs)
+print()
+print()
 for layer in neural_net.network:
 	print(layer)
+
+
+#row = [1, 0]
+#output = neural_net.forward_propagate(row)
+#pprint(output)
+#neural_net.network = [[{'output': 0.7105668883115941, 'weights': [0.13436424411240122, 0.8474337369372327, 0.763774618976614]}],
+#		[{'output': 0.6213859615555266, 'weights': [0.2550690257394217, 0.49543508709194095]}, {'output': 0.6573693455986976, 'weights': [0.4494910647887381, 0.651592972722763]}]]
+#expected = [0, 1]
+#neural_net.back_propagate(expected)
+#neural_net.update_weights(row, .01)
+
+#for layer in neural_net.network:
+#	print(layer)
+
+
+
 
 #neural_net.network = neural_net.initialize_network()
 #for layer in neural_net.network:
