@@ -1,9 +1,8 @@
 import math
-import numpy as np
 from pprint import pprint
 from random import random
 from random import seed
-from numpy import genfromtxt
+from csv import reader
 
 class NeuralNet:
 
@@ -16,19 +15,6 @@ class NeuralNet:
 		self.network.append(hidden_layer)
 		output_layer = [{'weights':[random() for i in range(self.n_hidden_layers + 1)]} for i in range(self.n_outputs)]
 		self.network.append(output_layer)
-
-
-	def read_test_data(self):
-		self.test_data = genfromtxt('test_data.csv', delimiter=',')
-
-	def read_test_labels(self):
-		self.test_labels = genfromtxt('test_labels.csv', delimiter=',')
-
-	def read_training_data(self):
-		self.training_data = genfromtxt('train.csv', delimiter=',')
-
-	def read_sample_set(self):
-		self.sample_data = genfromtxt('sample_set.csv', delimiter=',')
 
 	def sigmoid(self, x):
 		return 1 / (1 + math.exp(-x))
@@ -93,57 +79,41 @@ class NeuralNet:
 				self.update_weights(row, learning_rate)
 			print('>epoch=%d, lrate=%.3f, error=%.3f' % (epoch, learning_rate, error))
 
+	def predict(self, row):
+		output = self.forward_propagate(row)
+		return output.index(max(output))
 
+def read_csv(filename):
+		dataset = list()
+		with open(filename, 'r') as file:
+			csv_reader = reader(file)
+			for row in csv_reader:
+				if not row:
+					continue
+				dataset.append(row)
+		return dataset
+
+def convert_data_to_int(dataset):
+	converted_dataset = [[int(value) for value in sublist] for sublist in dataset]
+	return converted_dataset
+
+filename = 'sample_set.csv'
+dataset = read_csv(filename)
+dataset = convert_data_to_int(dataset)
+n_inputs = len(dataset[0])
+n_outputs = len(set([row[-1] for row in dataset]))
+print(n_outputs)
+
+'''
 seed(1)
-dataset = [[2.7810836,2.550537003,0],
-	[1.465489372,2.362125076,0],
-	[3.396561688,4.400293529,0],
-	[1.38807019,1.850220317,0],
-	[3.06407232,3.005305973,0],
-	[7.627531214,2.759262235,1],
-	[5.332441248,2.088626775,1],
-	[6.922596716,1.77106367,1],
-	[8.675418651,-0.242068655,1],
-	[7.673756466,3.508563011,1]]
-
 n_inputs = len(dataset[0]) - 1
 n_outputs = len(set([row[-1] for row in dataset]))
 
 neural_net = NeuralNet(1, n_inputs, n_outputs)
-neural_net.train(dataset, 0.5, 20, n_outputs)
-print()
-print()
-for layer in neural_net.network:
-	print(layer)
-
-
-#row = [1, 0]
-#output = neural_net.forward_propagate(row)
-#pprint(output)
-#neural_net.network = [[{'output': 0.7105668883115941, 'weights': [0.13436424411240122, 0.8474337369372327, 0.763774618976614]}],
-#		[{'output': 0.6213859615555266, 'weights': [0.2550690257394217, 0.49543508709194095]}, {'output': 0.6573693455986976, 'weights': [0.4494910647887381, 0.651592972722763]}]]
-#expected = [0, 1]
-#neural_net.back_propagate(expected)
-#neural_net.update_weights(row, .01)
-
+neural_net.train(dataset, 0.5, 50, n_outputs)
 #for layer in neural_net.network:
 #	print(layer)
-
-
-
-
-#neural_net.network = neural_net.initialize_network()
-#for layer in neural_net.network:
-#	print(layer)
-#pprint(neural_net.initialize_network())
-
-#my_data = genfromtxt('test_data.csv', delimiter=',')	
-
-
-#count=0
-#for row in neural_net.sample_data:
-#	print(row)
-#	print("------------------------------------------------------------")
-#	print("------------------------------------------------------------")
-#	count+=1
-#	print(count)
+for row in dataset:
+	prediction = neural_net.predict(row)
+	print('Expected=%d, Got=%d' % (row[-1], prediction))
+'''
