@@ -97,21 +97,14 @@ def convert_data_to_int(dataset):
 	converted_dataset = [[int(value) for value in sublist] for sublist in dataset]
 	return converted_dataset
 
-def minmax(dataset):
-	minmax = 9
-	print(zip(*dataset))
-	for row in zip(*dataset):
-		print(row)
-	#minmax = list()
-	#stats = [[min(column), max(column)] for column in zip(*dataset)]
-	return minmax
-
 def normalize_data(dataset):
 	for row in dataset:
 		minimum = min(row)
 		maximum = max(row)
-		for data in row:
-			minmax = (data - minimum) / (maximum - minimum)
+		for data in range(len(row)):
+			minmax = (row[data] - minimum) / (maximum - minimum)
+			row[data] = minmax
+	print(dataset)
 
 filename = 'sample_train.csv'
 dataset = read_csv(filename)
