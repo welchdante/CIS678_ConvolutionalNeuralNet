@@ -97,12 +97,19 @@ def convert_data_to_int(dataset):
 	converted_dataset = [[int(value) for value in sublist] for sublist in dataset]
 	return converted_dataset
 
-filename = 'sample_set.csv'
+filename = 'train.csv'
 dataset = read_csv(filename)
 dataset = convert_data_to_int(dataset)
-n_inputs = len(dataset[0])
-n_outputs = len(set([row[-1] for row in dataset]))
-print(n_outputs)
+n_inputs = len(dataset[0]) - 1
+print(n_inputs)
+n_outputs = 10
+neural_net = NeuralNet(1, n_inputs, n_outputs)
+neural_net.train(dataset, 0.1, 50, n_outputs)
+
+
+#for row in dataset:
+#	prediction = neural_net.predict(row)
+#	print('Expected=%d, Got=%d' % (row[-1], prediction))
 
 '''
 seed(1)
