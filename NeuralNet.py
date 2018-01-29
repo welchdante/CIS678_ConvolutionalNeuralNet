@@ -73,12 +73,11 @@ class NeuralNet:
 			for row in training_data:
 				outputs = self.forward_propagate(row)
 				expected = [0 for i in range(num_outputs)]
-				print(expected[row[-1]])
 				expected[row[-1]] = 1
 				error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
 				self.back_propagate(expected)
 				self.update_weights(row, learning_rate)
-			print('>epoch=%d, lrate=%.3f, error=%.3f' % (epoch, learning_rate, error))
+			print('Epoch = %d, Learning Rate = %.3f, Error = %.3f' % (epoch, learning_rate, error))
 
 	def predict(self, row):
 		output = self.forward_propagate(row)
@@ -107,15 +106,15 @@ def normalize_data(dataset):
 			minmax = (row[data] - minimum) / (maximum - minimum)
 			row[data] = minmax
 
-filename = 'sample_train.csv'
+filename = 'train.csv'
 dataset = read_csv(filename)
 dataset = convert_data_to_int(dataset)
-normalize_data(dataset)
+#normalize_data(dataset)
 
 n_inputs = len(dataset[0]) - 1
 n_outputs = 10
-neural_net = NeuralNet(1, n_inputs, n_outputs)
-neural_net.train(dataset, 0.1, 50, n_outputs)
+neural_net = NeuralNet(5, n_inputs, n_outputs)
+neural_net.train(dataset, 0.25, 20, n_outputs)
 
 
 #for row in dataset:
