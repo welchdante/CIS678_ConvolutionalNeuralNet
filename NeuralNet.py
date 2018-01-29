@@ -97,14 +97,33 @@ def convert_data_to_int(dataset):
 	converted_dataset = [[int(value) for value in sublist] for sublist in dataset]
 	return converted_dataset
 
-filename = 'train.csv'
+def minmax(dataset):
+	minmax = 9
+	print(zip(*dataset))
+	for row in zip(*dataset):
+		print(row)
+	#minmax = list()
+	#stats = [[min(column), max(column)] for column in zip(*dataset)]
+	return minmax
+
+def normalize_data(dataset):
+	for row in dataset:
+		minimum = min(row)
+		maximum = max(row)
+		for data in row:
+			minmax = (data - minimum) / (maximum - minimum)
+
+filename = 'sample_train.csv'
 dataset = read_csv(filename)
 dataset = convert_data_to_int(dataset)
-n_inputs = len(dataset[0]) - 1
-print(n_inputs)
-n_outputs = 10
-neural_net = NeuralNet(1, n_inputs, n_outputs)
-neural_net.train(dataset, 0.1, 50, n_outputs)
+normalize_data(dataset)
+
+#n_inputs = len(dataset[0]) - 1
+#n_outputs = 10
+#neural_net = NeuralNet(1, n_inputs, n_outputs)
+#neural_net.train(dataset, 0.1, 50, n_outputs)
+
+
 
 
 #for row in dataset:
