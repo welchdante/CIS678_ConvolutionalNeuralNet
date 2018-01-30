@@ -106,6 +106,7 @@ def normalize_data(dataset):
 			minmax = (row[data] - minimum) / (maximum - minimum)
 			row[data] = minmax
 
+seed(1)
 filename = 'train.csv'
 dataset = read_csv(filename)
 dataset = convert_data_to_int(dataset)
@@ -113,9 +114,13 @@ dataset = convert_data_to_int(dataset)
 
 n_inputs = len(dataset[0]) - 1
 n_outputs = 10
-neural_net = NeuralNet(5, n_inputs, n_outputs)
-neural_net.train(dataset, 0.25, 20, n_outputs)
-
+n_hidden_layers = 5
+neural_net = NeuralNet(n_hidden_layers, n_inputs, n_outputs)
+neural_net.train(dataset, 0.3, 100, n_outputs)
+for layer in neural_net.network:
+	print(layer)
+	print()
+	print()
 
 #for row in dataset:
 #	prediction = neural_net.predict(row)
