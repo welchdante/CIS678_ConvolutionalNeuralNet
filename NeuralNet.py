@@ -3,6 +3,7 @@ from pprint import pprint
 from random import random
 from random import seed
 from csv import reader
+import csv
 
 class NeuralNet:
 
@@ -11,10 +12,10 @@ class NeuralNet:
 		self.n_inputs = n_inputs
 		self.n_outputs = n_outputs
 		self.network = list()
-		hidden_layer = [{'weights':[random() for i in range(self.n_inputs + 1)]} for i in range(self.n_hidden_layers)]
-		self.network.append(hidden_layer)
-		output_layer = [{'weights':[random() for i in range(self.n_hidden_layers + 1)]} for i in range(self.n_outputs)]
-		self.network.append(output_layer)
+		self.hidden_layer = [{'weights':[random() for i in range(self.n_inputs + 1)]} for i in range(self.n_hidden_layers)]
+		self.network.append(self.hidden_layer)
+		self.output_layer = [{'weights':[random() for i in range(self.n_hidden_layers + 1)]} for i in range(self.n_outputs)]
+		self.network.append(self.output_layer)
 
 	def sigmoid(self, x):
 		return 1 / (1 + math.exp(-x))
@@ -39,7 +40,7 @@ class NeuralNet:
 			inputs = new_inputs
 		return inputs
 
-	def back_propagate(self, expected):
+	def back_propagate_error(self, expected):
 		for i in reversed(range(len(self.network))):
 			layer = self.network[i]
 			errors = list()
@@ -69,73 +70,133 @@ class NeuralNet:
 
 	def train(self, training_data, learning_rate, num_epochs, num_outputs):
 		for epoch in range(num_epochs):
+			num_correct = 0
+			total_guesses = 0
 			error = 0
 			for row in training_data:
 				outputs = self.forward_propagate(row)
 				expected = [0 for i in range(num_outputs)]
 				expected[row[-1]] = 1
+				if outputs.index(max(outputs)) == expected.index(max(expected)):
+					num_correct += 1
+				total_guesses += 1
+				accuracy = num_correct / total_guesses
+				#print('Epoch: %d, Prediction: %d, Actual: %d, Accuracy: %f' %(epoch, outputs.index(max(outputs)), expected.index(max(expected)), accuracy))				
 				error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
-				self.back_propagate(expected)
+				self.back_propagate_error(expected)
 				self.update_weights(row, learning_rate)
+			#print(outputs)
+			#print('Prediction: %d, Actual: %d' %(outputs.index(max(outputs)), expected.index(max(expected))))					
 			print('Epoch = %d, Learning Rate = %.3f, Error = %.3f' % (epoch, learning_rate, error))
-
-	def predict(self, row):
-		output = self.forward_propagate(row)
-		return output.index(max(output))
+			#if epoch % 100 == 0:
+			#	print('Epoch = %d, Learning Rate = %.3f, Error = %.3f' % (epoch, learning_rate, error))
 
 
 def read_csv(filename):
-		dataset = list()
-		with open(filename, 'r') as file:
-			csv_reader = reader(file)
-			for row in csv_reader:
-				if not row:
-					continue
-				dataset.append(row)
-		return dataset
+	dataset = list()
+	with open(filename, 'r') as file:
+		csv_reader = reader(file)
+		for row in csv_reader:
+			if not row:
+				continue
+			dataset.append(row)
+	return dataset
 
-def convert_data_to_int(dataset):
-	converted_dataset = [[int(value) for value in sublist] for sublist in dataset]
-	return converted_dataset
+def write_csv(dataset):
+	with open("this_better_work.csv", "w") as f:
+		writer = csv.writer(f)
+		writer.writerows(dataset)
+
+def convert_data(dataset):
+	for i in range(len(dataset[0]) - 1):
+		convert_data_to_float(dataset, i)
+	convert_class_data_to_int(dataset, -1)
+
+def convert_data_to_float(dataset, column):
+	for row in dataset:
+		row[column] = float(row[column].strip())
+
+def convert_class_data_to_int(dataset, column):
+	for row in dataset:
+		row[column] = int(row[column])
 
 def normalize_data(dataset):
-	for row in dataset:
-		minimum = min(row)
-		maximum = max(row)
-		for data in range(len(row)):
-			minmax = (row[data] - minimum) / (maximum - minimum)
-			row[data] = minmax
+	print(len(dataset[0]))
+	for i in range(len(dataset)):
+		label = dataset[i][-1]
+		for j in range(len(dataset[i])):
+			dataset[i][j] = dataset[i][j] / 255
+			dataset[i][-1] = label
+	return dataset
+
+def predict(neural_net, row):
+	outputs = neural_net.forward_propagate(row)
+	print(outputs)
+	return outputs.index(max(outputs))
+
+def evaluate_algorithm(dataset, algorithm, n_folds, *args):
+	folds = cross_validation_split(dataset, n_folds)
+	scores = list()
+	for fold in folds:
+		train_set = list(folds)
+		train_set.remove(fold)
+		train_set = sum(train_set, [])
+		test_set = list()
+		for row in fold:
+			row_copy = list(row)
+			test_set.append(row_copy)
+			row_copy[-1] = None
+		predicted = algorithm(train_set, test_set, *args)
+		actual = [row[-1] for row in fold]
+		accuracy = accuracy_metric(actual, predicted)
+		scores.append(accuracy)
+	return scores
 
 seed(1)
-filename = 'train.csv'
+filename = 'sample_train.csv'
 dataset = read_csv(filename)
-dataset = convert_data_to_int(dataset)
-#normalize_data(dataset)
+convert_data(dataset)
+
+#normalized_data = normalize_data(dataset)
+#print(normalized_data)
+
+#test_filename = 'sample_test_data.csv'
+#test_dataset = read_csv(filename)
+#convert_data(test_dataset)
+
+#write_csv(dataset)
 
 n_inputs = len(dataset[0]) - 1
-n_outputs = 10
-n_hidden_layers = 5
+n_outputs = len(set([row[-1] for row in dataset]))
+n_hidden_layers = 1
+learning_rate = 0.1
+n_epochs = 20
 neural_net = NeuralNet(n_hidden_layers, n_inputs, n_outputs)
-neural_net.train(dataset, 0.3, 100, n_outputs)
-for layer in neural_net.network:
-	print(layer)
-	print()
-	print()
+neural_net.train(dataset, learning_rate, n_epochs, n_outputs)
+
+#predictions = list()
+#for row in test_dataset:
+#	prediction = predict(neural_net, row)
+#	predictions.append(prediction)
+
+#print(predictions)
+
+#scores = evaluate_algorithm(dataset, back_propagation, n_folds, l_rate, n_epoch, n_hidden)
+
+
+#predictions = list()
+#for row in test:
+#	prediction = predict(network, row)
+#	predictions.append(prediction)
+#return(predictions)
+
+
+#for layer in neural_net.network:
+	#print(layer['weights'])
+#	print()
+#	print()
 
 #for row in dataset:
 #	prediction = neural_net.predict(row)
 #	print('Expected=%d, Got=%d' % (row[-1], prediction))
 
-'''
-seed(1)
-n_inputs = len(dataset[0]) - 1
-n_outputs = len(set([row[-1] for row in dataset]))
-
-neural_net = NeuralNet(1, n_inputs, n_outputs)
-neural_net.train(dataset, 0.5, 50, n_outputs)
-#for layer in neural_net.network:
-#	print(layer)
-for row in dataset:
-	prediction = neural_net.predict(row)
-	print('Expected=%d, Got=%d' % (row[-1], prediction))
-'''
