@@ -57,7 +57,7 @@ class NeuralNet:
 			for j in range(len(layer)):
 				neuron = layer[j]
 				neuron['delta'] = errors[j] * self.sigmoid_derivative(neuron['output'])
-
+				
 	def update_weights(self, row, learning_rate):
 		for i in range(len(self.network)):
 			inputs = row[:-1]
@@ -66,32 +66,52 @@ class NeuralNet:
 			for neuron in self.network[i]:
 				for j in range(len(inputs)):
 					neuron['weights'][j] += learning_rate * neuron['delta'] * inputs[j]
+					if i == 0 and j == 0:
+						print("\t\t\t", inputs[j])
+						print("\t\t\t", neuron['delta'])
+						print("\t\t\t", learning_rate * neuron['delta']*inputs[j])
 				neuron['weights'][-1] += learning_rate * neuron['delta']
 
+
 	def train(self, training_data, learning_rate, num_epochs, num_outputs):
-		for epoch in range(num_epochs):
-			num_correct = 0
-			total_guesses = 0
+		num_correct = 0
+		total_guesses = 0
+		for epoch in range(num_epochs):			
 			error = 0
-			for row in training_data:
-				outputs = self.forward_propagate(row)
-				expected = [0 for i in range(num_outputs)]
-				expected[row[-1]] = 1
-				if outputs.index(max(outputs)) == expected.index(max(expected)):
-					num_correct += 1
-				total_guesses += 1
-				accuracy = num_correct / total_guesses
-				#print('Epoch: %d, Prediction: %d, Actual: %d, Accuracy: %f' %(epoch, outputs.index(max(outputs)), expected.index(max(expected)), accuracy))				
-				error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
-				self.back_propagate_error(expected)
-				self.update_weights(row, learning_rate)
+			random_row = int(random()*len(training_data))
+			#print(training_data[random_row])
+			row = training_data[random_row]
+			outputs = self.forward_propagate(row)
+			expected = [0 for i in range(num_outputs)]
+			expected[row[-1]] = 1
+			if outputs.index(max(outputs)) == expected.index(max(expected)):
+				num_correct += 1
+			total_guesses += 1
+			accuracy = num_correct / total_guesses
+			#print('Epoch: %d, Prediction: %d, Actual: %d, Accuracy: %f' %(epoch, outputs.index(max(outputs)), expected.index(max(expected)), accuracy))				
+			error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
+			self.backpropagate(row, expected, outputs)
+			#self.back_propagate_error(expected)
+			self.update_weights(row, learning_rate)
+
+			# for row in training_data:
+			# 	outputs = self.forward_propagate(row)
+			# 	expected = [0 for i in range(num_outputs)]
+			# 	expected[row[-1]] = 1
+			# 	if outputs.index(max(outputs)) == expected.index(max(expected)):
+			# 		num_correct += 1
+			# 	total_guesses += 1
+			# 	accuracy = num_correct / total_guesses
+			# 	#print('Epoch: %d, Prediction: %d, Actual: %d, Accuracy: %f' %(epoch, outputs.index(max(outputs)), expected.index(max(expected)), accuracy))				
+			# 	error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
+			# 	self.back_propagate_error(expected)
+			# 	self.update_weights(row, learning_rate)
 			#print(outputs)
 			#print('Prediction: %d, Actual: %d' %(outputs.index(max(outputs)), expected.index(max(expected))))					
-			print('Epoch = %d, Learning Rate = %.3f, Error = %.3f' % (epoch, learning_rate, error))
+			#print('Epoch = %d, Learning Rate = %.3f, Error = %.3f' % (epoch, learning_rate, error))
 			#if epoch % 100 == 0:
-			#	print('Epoch = %d, Learning Rate = %.3f, Error = %.3f' % (epoch, learning_rate, error))
-
-
+			print('Epoch = %d, Learning Rate = %.3f, Error = %.3f' % (epoch, learning_rate, error))
+		
 def read_csv(filename):
 	dataset = list()
 	with open(filename, 'r') as file:
@@ -153,9 +173,26 @@ def evaluate_algorithm(dataset, algorithm, n_folds, *args):
 	return scores
 
 seed(1)
-filename = 'sample_train.csv'
+filename = 'normalized_train.csv'
 dataset = read_csv(filename)
 convert_data(dataset)
+
+# dataset = [
+# 	[2.7810836,2.550537003,0],
+# 	[1.465489372,2.362125076,0],
+# 	[3.396561688,4.400293529,0],
+# 	[1.38807019,1.850220317,0],
+# 	[3.06407232,3.005305973,0],
+# 	[7.627531214,2.759262235,1],
+# 	[5.332441248,2.088626775,1],
+# 	[6.922596716,1.77106367,1],
+# 	[8.675418651,-0.242068655,1],
+# 	[7.673756466,3.508563011,1],
+# 	[12.627531214,2.759262235,2],
+# 	[11.332441248,2.088626775,2],
+# 	[13.922596716,1.77106367,2],
+# 	[14.675418651,-0.242068655,2]
+# 	]
 
 #normalized_data = normalize_data(dataset)
 #print(normalized_data)
@@ -169,8 +206,8 @@ convert_data(dataset)
 n_inputs = len(dataset[0]) - 1
 n_outputs = len(set([row[-1] for row in dataset]))
 n_hidden_layers = 1
-learning_rate = 0.1
-n_epochs = 20
+learning_rate = .1
+n_epochs = 10000
 neural_net = NeuralNet(n_hidden_layers, n_inputs, n_outputs)
 neural_net.train(dataset, learning_rate, n_epochs, n_outputs)
 
